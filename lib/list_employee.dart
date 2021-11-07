@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:pgncourse/model/employee.dart';
@@ -29,7 +31,7 @@ class _ListEmployeeState extends State<ListEmployee> {
     return prefs.getString('token');
   }
 
-  Future<List<Employee>> getData() async {
+  Future<Employee> getData() async {
     String token =
         "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOjEsImlhdCI6MTYzNjI2OTk4NSwiZXhwIjoxNjM2ODc0Nzg1fQ.CqnW3U5jh4LyyufBoxrIdMlxW616fQIN63cBJ0b98e0";
     final response = await http.get(
@@ -42,7 +44,15 @@ class _ListEmployeeState extends State<ListEmployee> {
           'Authorization': 'Bearer $token',
         });
     print('Token: ${token}');
-    print(response.body);
+    // print('Data Employee: ${}');
+    // print(response.body);
+
+    if (response.statusCode == 200) {
+      final jsonresponse = json.decode(response.body);
+      return Employee.fromJson(jsonresponse[0]);
+    } else {
+      throw Exception('Failed to load post');
+    }
   }
 
   @override
@@ -58,42 +68,35 @@ class _ListEmployeeState extends State<ListEmployee> {
         automaticallyImplyLeading: false,
         title: Text('ListEmployee'),
       ),
-      body: FutureBuilder<List<Employee>>(
+      body: FutureBuilder<Employee>(
         future: getData(),
+        // ignore: missing_return
         builder: (context, snapshot) {
-          if (snapshot.hasError) print(snapshot.error);
-          return snapshot.hasData
-              ? ItemList(
-                  list: snapshot.data,
-                )
-              :  Center(
-                  child:Text('Data ga Tampil')
+          switch (snapshot.connectionState) {
+            case ConnectionState.none:
+              return const Center(
+                child: Text('Koneksi Terputus'),
+              );
+            case ConnectionState.waiting:
+              return const Text(
+                'Mohon Tunggu ..',
+                style: TextStyle(
+                  color: Colors.black,
+                ),
+              );
+            default:
+              if (snapshot.hasData) {
+                return Card(
+                  child: ListTile(
+                    title: Text(snapshot.data.employeeName),
+                  ),
                 );
+              } else {
+                return Text('Result :${snapshot.error}');
+              }
+          }
         },
       ),
-    );
-  }
-}
-
-// ignore: must_be_immutable
-class ItemList extends StatelessWidget {
-   List list;
-   ItemList({this.list});
-
-  @override
-  Widget build(BuildContext context) {
-    return ListView.builder(
-      itemCount: list == null ? 0 : list.length,
-      itemBuilder: (context, i) {
-        return Container(
-          padding: const EdgeInsets.all(10.0),
-          child: Card(
-            child: ListTile(
-              title:Text('Test')
-            ),
-          ),
-        );
-      },
     );
   }
 }

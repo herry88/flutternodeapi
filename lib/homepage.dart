@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:pgncourse/list_employee.dart';
+import 'package:pgncourse/model/employee.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'loginpage.dart';
 
@@ -12,13 +13,6 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage> {
   SharedPreferences sharedPreferences;
-
-  @override
-  void initState() {
-    super.initState();
-    checkLoginStatus();
-  }
-
   checkLoginStatus() async {
     sharedPreferences = await SharedPreferences.getInstance();
     if (sharedPreferences.getString("token") == null) {
@@ -26,6 +20,13 @@ class _HomePageState extends State<HomePage> {
           MaterialPageRoute(builder: (BuildContext context) => LoginPage()),
           (Route<dynamic> route) => false);
     }
+  }
+  
+
+  @override
+  void initState() {
+    super.initState();
+    checkLoginStatus();
   }
 
   @override
@@ -46,18 +47,17 @@ class _HomePageState extends State<HomePage> {
             ),
             ListTile(
               title: const Text("List Products"),
-              trailing:const Icon(Icons.help),
-              onTap: (){
-                Navigator.of(context).push(MaterialPageRoute(builder: (context)=> const ListEmployee()));
+              trailing: const Icon(Icons.help),
+              onTap: () {
+                Navigator.of(context).push(MaterialPageRoute(
+                    builder: (context) => const ListEmployee()));
               },
             ),
-             ListTile(
-              title: const Text("Add Products"),
-              trailing:  Icon(Icons.help),
-              onTap:(){}
-            ),
-             const Divider(),
-           
+            ListTile(
+                title: const Text("Add Products"),
+                trailing: Icon(Icons.help),
+                onTap: () {}),
+            const Divider(),
           ],
         ),
       ),
