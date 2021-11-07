@@ -1,4 +1,9 @@
+import 'dart:convert';
+import 'dart:core';
 import 'package:flutter/material.dart';
+import 'package:pgncourse/homepage.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:http/http.dart' as http;
 
 class LoginPage extends StatefulWidget {
   const LoginPage({Key key}) : super(key: key);
@@ -9,6 +14,38 @@ class LoginPage extends StatefulWidget {
 
 class _LoginPageState extends State<LoginPage> {
   bool _isLoading = false;
+  signIn(String username,  pass) async {
+    SharedPreferences sharedPreferences = await SharedPreferences.getInstance();
+    Map data = {'username': username, 'password': pass};
+    var jsonResponse = null;
+    var response = await http.post(
+      Uri.parse("http://node.pgncom.co.id:1700/users/authenticate"),
+      body: data,
+    );
+    if (response.statusCode == 200) {
+      jsonResponse = json.decode(response.body);
+
+      print("Reponse status: ${response.statusCode}");
+      print("Reponse body: ${response.body}");
+      if (jsonResponse != null) {
+        setState(() {
+          _isLoading = false;
+        });
+        sharedPreferences.setString("token", jsonResponse['token']);
+        Navigator.of(context).pushAndRemoveUntil(
+            MaterialPageRoute(
+                builder: (BuildContext context) => const HomePage()),
+            (Route<dynamic> route) => false);
+      } else{
+        setState(() {
+          _isLoading = false; 
+
+        });
+        print(response.body);
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -42,13 +79,15 @@ class _LoginPageState extends State<LoginPage> {
       ),
     );
   }
-
+  final TextEditingController usernameController =  TextEditingController();
+  final TextEditingController passwordController =  TextEditingController();
   Container textSection() {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 15.0, vertical: 20.0),
       child: Column(
         children: [
           TextFormField(
+            controller: usernameController,
             cursorColor: Colors.black,
             style: const TextStyle(
               color: Colors.black87,
@@ -73,7 +112,7 @@ class _LoginPageState extends State<LoginPage> {
             height: 30.0,
           ),
           TextFormField(
-            // controller: passwordController,
+            controller: passwordController,
             cursorColor: Colors.white,
             obscureText: true,
             style: const TextStyle(color: Colors.black),
@@ -106,7 +145,12 @@ class _LoginPageState extends State<LoginPage> {
             borderRadius: BorderRadius.circular(10.0),
           ),
         ),
-        onPressed: () {},
+        onPressed: usernameController.text == "" || passwordController.text == "" ? null :() {
+          setState(() {
+            _isLoading = true;
+          });
+          signIn(usernameController.text, passwordController.text);
+        },
         child: const Text('Login'),
       ),
     );
